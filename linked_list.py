@@ -1,10 +1,4 @@
-class Link(object):
-
-    def __init__(self, key=None, val=None):
-        self.key = key
-        self.val = val
-        self.next = None
-        self.prev = None
+from link import Link
 
 
 
@@ -15,7 +9,6 @@ class LinkedList(object):
         self.tail = Link()
         self.head.next = self.tail
         self.tail.prev = self.head
-
 
     def first(self):
         return self.head.next
