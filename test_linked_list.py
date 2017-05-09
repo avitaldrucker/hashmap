@@ -2,12 +2,19 @@ import unittest
 from linked_list import LinkedList
 
 class TestLinkedListMethods(unittest.TestCase):
+
     def setUp(self):
         self.empty_list = LinkedList()
         self.linked_list = LinkedList()
         self.linked_list.append("first", 1)
         self.linked_list.append("second", 2)
         self.linked_list.append("third", 3)
+
+    def test___getItem__(self):
+        self.assertEqual(self.linked_list[0].key, "first")
+        self.assertEqual(self.linked_list[1].key, "second")
+        self.assertEqual(self.linked_list[2].key, "third")
+        self.assertIsNone(self.linked_list[3])
 
     def test_empty(self):
         self.assertTrue(self.empty_list.empty())
@@ -36,12 +43,12 @@ class TestLinkedListMethods(unittest.TestCase):
         self.assertEqual(self.linked_list.get("third"), 3)
 
     def test_get_returns_none_for_absent_keys(self):
-        self.assertEqual(self.linked_list.get("absent key"), None)
+        self.assertIsNone(self.linked_list.get("absent key"))
 
     def test_remove_by_key(self):
         self.assertEqual(self.linked_list.get("first"), 1)
         self.linked_list.remove("first")
-        self.assertEqual(self.linked_list.get("first"), None)
+        self.assertIsNone(self.linked_list.get("first"))
 
     def test_remove_reassigns_pointers(self):
         self.linked_list.remove("second")
@@ -51,6 +58,11 @@ class TestLinkedListMethods(unittest.TestCase):
     def test_include(self):
         self.assertTrue(self.linked_list.include("first"))
         self.assertFalse(self.linked_list.include("fourth"))
+
+    def test___str__(self):
+        expected_string = "['first', 1], ['second', 2], ['third', 3]"
+        self.assertEqual(str(self.linked_list), expected_string)
+
 
 if __name__ == '__main__':
     unittest.main()
