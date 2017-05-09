@@ -48,8 +48,13 @@ class HashMap(object):
 
 
     # Longform version of getting a value for a key
-    def get(self, key):
-        return self[key]
+    # Default parameter allows for a default value to be returned
+    # if key is not in the hash map
+    def get(self, key, default=None):
+        if self[key]:
+            return self[key]
+        else:
+            return default
 
 
     # Delete key-value pair: look for a link in the correct linked list

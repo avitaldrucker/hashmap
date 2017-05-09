@@ -1,115 +1,121 @@
 from hash_map import HashMap
 
 
-with open('reconin.txt') as inputfile:
-    data = inputfile.read()
-
 class TransactionParser(object):
 
+    # Initialize with cash set to zero and stocks as empty hash map
     def __init__(self):
         self.cash = 0
         self.stocks = HashMap()
 
-    def reconcile(self, recon_in):
-        transactions = recon_in.split("\n\n")
-        original_setting = transactions.pop(0)
-        final_setting = transactions.pop()
-        stocks = HashMap()
-        original_settings = original_setting.split("\n")
-
-        self.parse_initial_settings(original_settings)
-        self.parse_transactions(transactions)
-        return self.difference(final_setting)
 
     def parse_initial_settings(self, settings):
-        i = 1
-        while i < len(settings):
-            line = settings[i].split(" ")
-            if line[0] == "Cash":
-                self.cash = float(line[1])
-            else:
-                self.stocks[line[0]] = float(line[1])
-            i += 1
+        for line in settings:
+            name, num = line.split(" ")
 
-    def parse_transactions(self, transactions):
-        transactions = transactions[0].split("\n")
-        transactions.pop(0)
-        i = 0
-        while i < len(transactions):
-            line = transactions[i].split(" ")
+            if name == "Cash":
+                self.cash = float(num)
+            else:
+                self.stocks[name] = float(num)
+
+
+    def process_transactions(self, transactions):
+        for line in transactions:
+            line = line.split(" ")
             if line[0] == "Cash":
                 self.parse_cash_transaction(line)
             else:
                 self.parse_stock_transaction(line)
 
-            i += 1
+    def reconcile(self, recon_in):
+        transactions = recon_in.split("\n\n")
+        original_settings = self.format_settings(transactions.pop(0))
+        final_settings = self.format_settings(transactions.pop())
+        middle_transactions = self.format_settings(transactions[0])
+
+        self.parse_initial_settings(original_settings)
+        self.process_transactions(middle_transactions)
+        return self.overall_diff(final_settings)
+
+
 
     def declared_settings(self, settings):
-        params = HashMap()
+        settings.pop()
+        stocks = HashMap()
 
         for line in settings:
-            line = line.split(" ")
-            if len(line) == 2:
-                stock = line[0]
-                num_stocks = float(line[1])
-                params[stock] = num_stocks
+            stock, num_stocks = line.split(" ")
+            stocks[stock] = float(num_stocks)
 
-        return params
+        return stocks
 
 
+    def cash_diff(self, declared_results):
+        for key in declared_results.keys():
+            if key == "Cash":
+                declared_cash = float(declared_results[key])
 
-    def difference(self, settings):
+        return int(declared_cash - self.cash)
+
+
+    def format_settings(self, settings):
         lines = settings.split("\n")
         lines.pop(0)
-        differences = []
-
-        declared_results = self.declared_settings(lines)
-
-        for stock in self.stocks.keys():
-            if declared_results[stock]:
-                if int(declared_results[stock] - self.stocks[stock]) != 0:
-                    differences.append(stock + " " + str(int(declared_results[stock] - self.stocks[stock])))
-            elif self.stocks[stock] != 0:
-                differences.append(stock + " " + str(int(-1 * self.stocks[stock])))
+        return lines;
 
 
-        for line in lines:
-            line = line.split(" ")
-            stock = line[0]
-            if len(line) == 2:
-                if not self.stocks[stock] and stock != "Cash":
-                    differences.append(stock + " " + line[1])
-                elif stock == "Cash":
-                    cash_difference = float(line[1]) - self.cash
-                    differences.insert(0, "Cash " + str(int(cash_difference)))
+    def stock_diff(self, key, declared_results):
+        if self.stocks[key] and declared_results[key]:
+            return float(declared_results[key]) - self.stocks[key]
+        elif self.stocks[key]:
+            return -1 * self.stocks[key]
+        elif declared_results[key] and key != "Cash":
+            return float(declared_results[key])
+        else:
+            return None
 
-        return "\n".join(differences)
+
+    def overall_diff(self, settings):
+        diffs = []
+        declared = self.declared_settings(settings)
+        all_keys = list(set(self.stocks.keys() + declared.keys()))
+
+        for key in all_keys:
+            diff = self.stock_diff(key, declared)
+            if diff and diff != 0:
+                diffs.append(key + " " + str(int(diff)))
+
+        diffs.insert(0, "Cash " + str(self.cash_diff(declared)))
+        return "\n".join(diffs)
 
 
     def parse_cash_transaction(self, transaction):
-        if transaction[1] == "DEPOSIT":
-            self.cash += int(transaction[3]) - int(transaction[2])
+        command, cash = transaction[1], float(transaction[3])
+
+        if command == "DEPOSIT":
+            self.cash += cash
         else:
-            self.cash -= int(transaction[3]) - int(transaction[2])
+            self.cash -= cash
+
 
     def parse_stock_transaction(self, transaction):
-        stock = transaction[0]
-        command = transaction[1]
+        stock, command, num_stocks, cash_difference = transaction
+        num_stocks = int(num_stocks)
+        cash_difference = int(cash_difference)
+        owned_stocks = self.stocks.get(stock, 0)
 
-        num_stocks = float(transaction[2])
-        cash_difference = float(transaction[3])
         if command == "SELL":
-            if not self.stocks[stock]:
-                self.stocks[stock] = 0
-            self.stocks[stock] = self.stocks[stock] - num_stocks
-            self.cash = self.cash + cash_difference
+            self.stocks[stock] = owned_stocks - num_stocks
+            self.cash += cash_difference
         elif command == "BUY":
-            if not self.stocks[stock]:
-                self.stocks[stock] = 0
-            self.stocks[stock] = self.stocks[stock] + num_stocks
-            self.cash = self.cash - cash_difference
+            self.stocks[stock] = owned_stocks + num_stocks
+            self.cash -= cash_difference
         elif command == "DIVIDEND":
-            self.cash = self.cash + (float(transaction[3]) - float(transaction[2]))
+            self.cash += (cash_difference - num_stocks)
+
+
+with open('reconin.txt') as inputfile:
+    data = inputfile.read()
 
 transaction_parser = TransactionParser()
 print(transaction_parser.reconcile(data))
