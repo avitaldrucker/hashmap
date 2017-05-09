@@ -114,3 +114,13 @@ class LinkedList(object):
             link = link.next
 
         return ", ".join(links)
+
+    def keys(self):
+        links = []
+        link = self.first()
+
+        while link != self.tail:
+            links.append(link.key)
+            link = link.next
+
+        return links

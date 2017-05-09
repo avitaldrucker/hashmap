@@ -99,3 +99,16 @@ class HashMap(object):
             i = i + 1
 
         return ", ".join(pairs)
+
+    def keys(self):
+        key_items = []
+
+        i = 0
+
+        while i < len(self.store):
+            linked_list = self.store[i]
+            links = linked_list.keys()
+            key_items = key_items + links
+            i += 1
+
+        return key_items
